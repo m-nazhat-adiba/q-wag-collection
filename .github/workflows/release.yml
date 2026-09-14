@@ -1,0 +1,47 @@
+name: Release
+
+# Tag a version and this attaches a ready-to-load zip to the release, so
+# installing needs no Node, no npm, and no clone.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The build has to pass its own tests before anyone downloads it.
+      - run: npm test
+
+      - name: Check the tag matches the manifest
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest="$(node -p "require('./manifest.json').version")"
+          if [ "$tag" != "$manifest" ]; then
+            echo "Tag $tag does not match manifest version $manifest" >&2
+            exit 1
+          fi
+
+      - name: Assemble the extension folder
+        run: |
+          mkdir -p wag-inbox
+          cp manifest.json options.html README.md wag-inbox/
+          cp -r dist wag-inbox/dist
+          zip -r "wag-inbox-${GITHUB_REF_NAME}.zip" wag-inbox
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: wag-inbox-*.zip
+          generate_release_notes: true

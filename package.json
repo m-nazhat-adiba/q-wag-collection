@@ -7,7 +7,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "esbuild src/main.js --bundle --format=iife --target=chrome111 --outfile=dist/content.js",
+    "build": "esbuild src/main.js --bundle --format=iife --target=chrome111 --outfile=dist/content.js && esbuild src/options.js --bundle --format=esm --target=chrome111 --outfile=dist/options.js",
     "pretest": "npm run build"
   },
   "devDependencies": {

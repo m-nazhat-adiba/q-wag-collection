@@ -31,16 +31,36 @@ used for the preview line if present.
 
 ## Install
 
-1. Build it: `npm install && npm run build`. This produces `dist/content.js`,
-   the script that gets injected. It is not committed, so a fresh clone has to
-   build before Chrome can load it.
-2. Open `chrome://extensions`.
-3. Turn on **Developer mode** (top right).
-4. Click **Load unpacked** and choose this folder.
-5. Click the extension's icon to open its settings.
-6. Paste the address of your chat-list endpoint and click **Save and grant
-   access**. Chrome asks whether to let the extension read that site; approve it.
-7. Open your console and reload. A **Groups** pill appears bottom-right.
+No tools required. You do not need Node, npm, git, or a copy of this code.
+
+1. Go to the [Releases page](../../releases) and download
+   `wag-inbox-vX.Y.Z.zip` from the newest release.
+2. Unzip it. You get a folder called `wag-inbox`. **Put it somewhere permanent**
+   — Chrome loads it from wherever it sits, so a folder in Downloads that you
+   later clear out will break the extension. Documents is fine.
+3. Open a new tab and go to `chrome://extensions`.
+4. Turn on **Developer mode**, the switch in the top right.
+5. Click **Load unpacked** and choose the `wag-inbox` folder you unzipped.
+6. Click the extension's icon in the toolbar. Its settings page opens.
+7. Paste the address of your chat-list endpoint, then click **Save and grant
+   access**. Chrome asks whether to let the extension read that site. Approve it.
+8. Open your console and reload the page. A **Groups** pill appears in the
+   bottom-right corner.
+
+To update later, download the newer zip, replace the folder's contents, and
+click the ↻ reload icon on the extension's card in `chrome://extensions`. Your
+picked groups and your endpoint are kept.
+
+### Install from source
+
+For development, or to run an unreleased version:
+
+```bash
+npm install
+npm run build     # writes dist/, which is not committed
+```
+
+Then follow steps 3 onward above, choosing the repository folder itself.
 
 The extension ships with access to nothing. It holds no site address until you
 enter one, and Chrome, not the extension, decides whether it gets access. You can
@@ -203,6 +223,12 @@ Policy, and a page serving `script-src 'self'` refuses a `chrome-extension:` URL
 outright — the import fails and nothing mounts. Bundling removes the fetch, and
 with nothing to fetch the extension needs no `web_accessible_resources` either.
 `test/registration.test.js` pins this so it cannot regress quietly.
+
+Pushing a `vX.Y.Z` tag builds the extension, runs the tests, checks the tag
+matches `manifest.json`, and attaches an installable zip to the GitHub release.
+The zip holds `manifest.json`, `options.html` and `dist/` — nothing is loaded
+from `src/` at runtime, and `test/package.test.js` keeps it that way, since a
+stray source reference would only fail after someone had installed it.
 
 `test/no-hostnames.test.js` fails if any specific deployment's address, product
 name, or customer name is committed. Adding a name to its exception list is not
