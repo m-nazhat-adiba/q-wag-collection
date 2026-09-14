@@ -230,4 +230,6 @@ async function start() {
   await poll();
 }
 
+console.info(`[WAG Inbox] v${chrome.runtime.getManifest().version} panel mounted`);
+
 guarded(start)();

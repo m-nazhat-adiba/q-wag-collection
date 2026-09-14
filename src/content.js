@@ -9,6 +9,11 @@
  * Keep it this small. All real work lives in main.js.
  */
 
+// Says which build is running. A stack trace whose line numbers disagree with
+// the source DevTools shows means an older injected copy is still alive, and
+// this line is how you tell without guessing.
+console.info(`[WAG Inbox] v${chrome.runtime.getManifest().version} loading`);
+
 import(chrome.runtime.getURL('src/main.js')).catch((error) => {
   console.error('[WAG Inbox] failed to load:', error);
 });
