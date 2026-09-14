@@ -107,15 +107,47 @@ would treat any other export from that console.
 ## How it gets the data
 
 A content script running on your console's own origin calls the endpoint you
-configured. The browser attaches your existing session cookie itself. The
-extension never reads, stores, or forwards any credential, and contacts no host
-other than the one you approved.
+configured. It contacts no host other than the one you approved.
 
-Polling sends the previous `ETag`, so an unchanged list costs a `304` with no
-body. That ETag is kept in memory only: it describes a response we stop holding
-once the tab reloads, so a stored one would earn a `304` against an empty list
-and the panel would show nothing while reporting a successful check. Each page
-load therefore starts with one full response.
+### How it authenticates
+
+By never touching a credential. It borrows the browser's:
+
+```js
+await fetch(endpoint, { credentials: 'include' });
+```
+
+`credentials: 'include'` supplies nothing. It instructs the browser to attach
+whatever cookies belong to that origin, and the browser does so after our code
+has finished. You are already signed in; the session cookie is `HttpOnly`, so no
+JavaScript can read it — not the page's, not ours — and the request goes out
+looking exactly like one the console itself made.
+
+There is consequently no code path in this repository where a session token
+exists as a value. That is why the manifest asks for neither `cookies` nor any
+`host_permissions` beyond the one origin you grant: it does not need them.
+
+The constraint this creates is worth knowing. **The endpoint must be on the same
+origin as the page the panel runs on.** Cross-origin, the browser applies CORS
+rules and withholds the cookie unless the server opts in. The settings page
+defaults the page pattern to the endpoint's own origin so the two match; change
+that second field to a different site and requests will start failing.
+
+It follows that the extension cannot sign in, and cannot renew anything. When
+the session expires the fetch returns `401`, polling stops, and the panel asks
+you to reload the page.
+
+### Polling
+
+Each request sends the previous `ETag`, so an unchanged list costs a `304` with
+no body. That ETag is kept in memory only: it describes a response we stop
+holding once the tab reloads, so a stored one would earn a `304` against an
+empty list and the panel would show nothing while reporting a successful check.
+Each page load therefore starts with one full response.
+
+To watch it work, open DevTools → Network and filter for your endpoint's path.
+Expect one request per interval: the first a `200`, then `304`s while nothing
+changes.
 
 ## What is stored, and what is not
 
@@ -155,6 +187,10 @@ npm run test:watch
 decision worth testing and touch neither the DOM nor chrome APIs. `src/panel.js`
 and `src/navigate.js` depend on markup we do not own and are verified by loading
 the extension.
+
+The panel renders and nothing else — it makes no network calls and reads no
+storage. `src/main.js` owns the poll loop and hands it what to draw. That split
+is what keeps the interesting logic unit-testable.
 
 `src/main.js` is the entry point. esbuild bundles it and everything it imports
 into a single classic script at `dist/content.js`, and that is what gets
