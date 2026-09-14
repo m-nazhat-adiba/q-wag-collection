@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WAG Inbox",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A filtered inbox of the group chats you pick, drawn on top of your team's chat console.",
   "permissions": [
     "storage",
@@ -11,7 +11,7 @@
     "https://*/*"
   ],
   "background": {
-    "service_worker": "src/background.js",
+    "service_worker": "dist/background.js",
     "type": "module"
   },
   "options_page": "options.html",
