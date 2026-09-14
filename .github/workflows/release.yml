@@ -41,7 +41,10 @@ jobs:
           cp -r dist wag-inbox/dist
           zip -r "wag-inbox-${GITHUB_REF_NAME}.zip" wag-inbox
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: wag-inbox-*.zip
-          generate_release_notes: true
+      # gh and GITHUB_TOKEN are already on the runner, so this needs no
+      # third-party action and no secret of its own.
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME"             "wag-inbox-${GITHUB_REF_NAME}.zip"             --title "WAG Inbox $GITHUB_REF_NAME"             --generate-notes
