@@ -1,0 +1,4 @@
+# Build output is written with LF by esbuild. Without this, Git's line-ending
+# conversion rewrites it on checkout and the committed bundles look modified
+# on every Windows machine, which would make the staleness check useless.
+dist/** -text
