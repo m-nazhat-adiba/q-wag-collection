@@ -33,8 +33,11 @@ used for the preview line if present.
 
 No tools required. You do not need Node, npm, git, or a copy of this code.
 
-1. Go to the [Releases page](../../releases) and download
-   `wag-inbox-vX.Y.Z.zip` from the newest release.
+1. Go to the [latest release](../../releases/latest) and download
+   `wag-inbox-vX.Y.Z.zip` from the **Assets** list at the bottom.
+
+   Not the **Source code (zip)** link. That archive holds the sources without
+   the built extension, and Chrome will refuse to load it.
 2. Unzip it. **Put the folder somewhere permanent** — Chrome loads it from
    wherever it sits, so a folder in Downloads that you later clear out will
    break the extension. Documents is fine. The folder you want is the one with
