@@ -224,8 +224,13 @@ outright — the import fails and nothing mounts. Bundling removes the fetch, an
 with nothing to fetch the extension needs no `web_accessible_resources` either.
 `test/registration.test.js` pins this so it cannot regress quietly.
 
-Pushing a `vX.Y.Z` tag builds the extension, runs the tests, checks the tag
-matches `manifest.json`, and attaches an installable zip to the GitHub release.
+`npm run package` builds the extension and writes
+`release/wag-inbox-vX.Y.Z.zip` — the same five files Chrome loads, and nothing
+else. Attach that to a GitHub release, or hand the unzipped folder to someone
+directly.
+
+Pushing a `vX.Y.Z` tag does the same thing on CI: builds, runs the tests, checks
+the tag matches `manifest.json`, and attaches the zip to the GitHub release.
 The zip holds `manifest.json`, `options.html` and `dist/` — nothing is loaded
 from `src/` at runtime, and `test/package.test.js` keeps it that way, since a
 stray source reference would only fail after someone had installed it.
