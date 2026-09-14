@@ -34,17 +34,25 @@ jobs:
             exit 1
           fi
 
-      - name: Assemble the extension folder
-        run: |
-          mkdir -p wag-inbox
-          cp manifest.json options.html README.md wag-inbox/
-          cp -r dist wag-inbox/dist
-          zip -r "wag-inbox-${GITHUB_REF_NAME}.zip" wag-inbox
+      # The same script used locally, so CI and a hand-built zip cannot drift
+      # apart. It writes release/wag-inbox-vX.Y.Z.zip with the manifest at the
+      # archive root.
+      - name: Build the installable zip
+        run: npm run package
 
       # gh and GITHUB_TOKEN are already on the runner, so this needs no
       # third-party action and no secret of its own.
+      # A release may already exist, if one was drafted by hand before the tag
+      # was pushed. Attaching to it beats failing outright.
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME"             "wag-inbox-${GITHUB_REF_NAME}.zip"             --title "WAG Inbox $GITHUB_REF_NAME"             --generate-notes
+          tag="$GITHUB_REF_NAME"
+          zip="release/wag-inbox-${tag}.zip"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$zip" --clobber
+          else
+            gh release create "$tag" "$zip"               --title "WAG Inbox $tag"               --notes-file RELEASE_NOTES.md
+          fi
