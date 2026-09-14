@@ -21,6 +21,18 @@ const DEFAULTS = {
   pollMs: DEFAULT_POLL_MS,
 };
 
+/**
+ * Whether this content script still has a live extension behind it.
+ *
+ * Reloading or updating an unpacked extension tears down its context while
+ * scripts already injected into open pages keep running. Every chrome call
+ * then throws "Extension context invalidated". chrome.runtime.id is the
+ * cheapest reliable tell: it is undefined the moment the link is severed.
+ */
+export function isContextAlive() {
+  return Boolean(globalThis.chrome?.runtime?.id);
+}
+
 export async function loadState() {
   const stored = await chrome.storage.local.get(Object.keys(DEFAULTS));
   return { ...DEFAULTS, ...stored };

@@ -11,7 +11,7 @@ import { buildInbox, markRead } from './diff.js';
 import { openInApp } from './navigate.js';
 import { createPanel } from './panel.js';
 import { parseImport, resolveImport, serialize } from './portable.js';
-import { loadState, saveState, setAllowlist, toggleAllowlist } from './store.js';
+import { isContextAlive, loadState, saveState, setAllowlist, toggleAllowlist } from './store.js';
 
 /** In-memory only. Never written to storage. */
 let allGroups = [];
@@ -67,6 +67,15 @@ async function draw() {
 }
 
 async function poll() {
+  // Nothing below can work without the extension behind us, and retrying
+  // cannot bring it back. Say so once and stop.
+  if (!isContextAlive()) {
+    clearTimeout(timer);
+    status = 'disconnected';
+    panel.renderDisconnected();
+    return;
+  }
+
   const { endpoint } = await loadState();
   const result = await fetchChats(endpoint, etag);
 

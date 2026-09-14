@@ -8,8 +8,8 @@ import {
 
 describe('normaliseEndpoint', () => {
   test('accepts a full https url and returns it unchanged', () => {
-    expect(normaliseEndpoint('https://example.com/wa-api/chats'))
-      .toBe('https://example.com/wa-api/chats');
+    expect(normaliseEndpoint('https://example.com/api/chats'))
+      .toBe('https://example.com/api/chats');
   });
 
   test('trims surrounding whitespace from a pasted url', () => {
@@ -36,7 +36,7 @@ describe('normaliseEndpoint', () => {
 
 describe('originPermission', () => {
   test('asks for the whole origin, which is what Chrome grants', () => {
-    expect(originPermission('https://example.com/wa-api/chats'))
+    expect(originPermission('https://example.com/api/chats'))
       .toBe('https://example.com/*');
   });
 
@@ -48,7 +48,7 @@ describe('originPermission', () => {
 
 describe('derivePagePattern', () => {
   test('defaults to every page on the same origin', () => {
-    expect(derivePagePattern('https://example.com/wa-api/chats'))
+    expect(derivePagePattern('https://example.com/api/chats'))
       .toBe('https://example.com/*');
   });
 });

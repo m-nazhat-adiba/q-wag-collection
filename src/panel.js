@@ -367,6 +367,18 @@ export function createPanel({
     for (const groupId of state.missing) list.append(missingRow(groupId));
   }
 
+  /**
+   * Rendered without touching storage or the callbacks, because by this point
+   * every chrome API in this page throws.
+   */
+  function renderDisconnected() {
+    meta.textContent = 'Disconnected';
+    launcherCount.textContent = '-';
+    launcher.dataset.unread = '0';
+    list.replaceChildren(el('div', 'notice',
+      'The extension was reloaded or updated, so this page lost touch with it. Reload the page to reconnect. Your picks are safe.'));
+  }
+
   function toast(message) {
     root.querySelector('.toast')?.remove();
     const node = el('div', 'toast', message);
@@ -374,5 +386,5 @@ export function createPanel({
     setTimeout(() => node.remove(), 4000);
   }
 
-  return { render, toast, setOpen };
+  return { render, toast, setOpen, renderDisconnected };
 }
