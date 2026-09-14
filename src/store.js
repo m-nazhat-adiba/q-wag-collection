@@ -33,12 +33,35 @@ export function isContextAlive() {
   return Boolean(globalThis.chrome?.runtime?.id);
 }
 
+/** Thrown instead of letting a chrome API blow up with its own wording. */
+export class ContextLostError extends Error {
+  constructor() {
+    super('The extension was reloaded, so this page lost touch with it.');
+    this.name = 'ContextLostError';
+  }
+}
+
+/**
+ * True for both our own error and Chrome's, since a call already in flight
+ * when the context dies rejects with Chrome's wording before we can check.
+ */
+export function isContextLost(error) {
+  return error instanceof ContextLostError
+    || /extension context invalidated/i.test(error?.message ?? '');
+}
+
+function assertContext() {
+  if (!isContextAlive()) throw new ContextLostError();
+}
+
 export async function loadState() {
+  assertContext();
   const stored = await chrome.storage.local.get(Object.keys(DEFAULTS));
   return { ...DEFAULTS, ...stored };
 }
 
 export async function saveState(patch) {
+  assertContext();
   await chrome.storage.local.set(patch);
 }
 

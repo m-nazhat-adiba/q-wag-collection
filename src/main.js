@@ -11,7 +11,7 @@ import { buildInbox, markRead } from './diff.js';
 import { openInApp } from './navigate.js';
 import { createPanel } from './panel.js';
 import { parseImport, resolveImport, serialize } from './portable.js';
-import { isContextAlive, loadState, saveState, setAllowlist, toggleAllowlist } from './store.js';
+import { isContextAlive, isContextLost, loadState, saveState, setAllowlist, toggleAllowlist } from './store.js';
 
 /** In-memory only. Never written to storage. */
 let allGroups = [];
@@ -34,13 +34,50 @@ let timer = null;
 /** What the last checked import would do. Held until you choose how to apply it. */
 let pendingImport = null;
 
+/**
+ * Reloading the extension severs this page from it. Nothing can be done from
+ * here except say so, so every entry point funnels failures into one place and
+ * the loop stops rather than throwing on a timer.
+ */
+let disconnected = false;
+
+function disconnect() {
+  if (disconnected) return;
+  disconnected = true;
+  clearTimeout(timer);
+  status = 'disconnected';
+  panel.renderDisconnected();
+}
+
+/** Wraps an entry point so a lost context ends the session instead of escaping. */
+function guarded(fn) {
+  return async (...args) => {
+    if (disconnected) return undefined;
+    try {
+      return await fn(...args);
+    } catch (error) {
+      if (!isContextLost(error)) throw error;
+      disconnect();
+      return undefined;
+    }
+  };
+}
+
 const panel = createPanel({
-  onOpenGroup,
-  onTogglePick,
-  onExport,
-  onImportText,
-  onApplyImport,
+  onOpenGroup: guarded(onOpenGroup),
+  onTogglePick: guarded(onTogglePick),
+  onExport: guarded(onExport),
+  onImportText: guarded(onImportText),
+  onApplyImport: guarded(onApplyImport),
   onOpenSettings,
+});
+
+// A call already in flight when the context dies rejects after our checks, so
+// this catches what no guard could have seen coming.
+window.addEventListener('unhandledrejection', (event) => {
+  if (!isContextLost(event.reason)) return;
+  event.preventDefault();
+  disconnect();
 });
 
 async function draw() {
@@ -69,12 +106,7 @@ async function draw() {
 async function poll() {
   // Nothing below can work without the extension behind us, and retrying
   // cannot bring it back. Say so once and stop.
-  if (!isContextAlive()) {
-    clearTimeout(timer);
-    status = 'disconnected';
-    panel.renderDisconnected();
-    return;
-  }
+  if (!isContextAlive()) return disconnect();
 
   const { endpoint } = await loadState();
   const result = await fetchChats(endpoint, etag);
@@ -121,7 +153,7 @@ async function poll() {
 
 function schedule() {
   clearTimeout(timer);
-  timer = setTimeout(poll, currentDelay);
+  timer = setTimeout(guarded(poll), currentDelay);
 }
 
 async function onOpenGroup(group) {
@@ -136,6 +168,7 @@ async function onOpenGroup(group) {
 }
 
 function onOpenSettings() {
+  if (!isContextAlive()) return disconnect();
   chrome.runtime.sendMessage({ type: 'openOptions' });
 }
 
@@ -197,4 +230,4 @@ async function start() {
   await poll();
 }
 
-start();
+guarded(start)();
