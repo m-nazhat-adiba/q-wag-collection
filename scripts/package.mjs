@@ -28,15 +28,19 @@ for (const file of ['manifest.json', 'options.html', 'README.md']) {
 }
 cpSync('dist', `${staged}/dist`, { recursive: true });
 
+// manifest.json sits at the root of the archive, not inside a folder.
+// Unzipping already creates a folder named after the zip, so wrapping the
+// files in another one buries the manifest a level deeper than Chrome looks
+// and "Load unpacked" fails on the folder people naturally pick.
 if (platform === 'win32') {
   execFileSync('powershell', [
     '-NoProfile',
     '-Command',
-    `Compress-Archive -Path '${staged}' -DestinationPath '${zipPath}' -Force`,
+    `Compress-Archive -Path '${staged}/*' -DestinationPath '${zipPath}' -Force`,
   ], { stdio: 'inherit' });
 } else {
-  execFileSync('zip', ['-r', `wag-inbox-v${version}.zip`, folderName], {
-    cwd: stagingRoot,
+  execFileSync('zip', ['-r', `../wag-inbox-v${version}.zip`, '.'], {
+    cwd: staged,
     stdio: 'inherit',
   });
 }

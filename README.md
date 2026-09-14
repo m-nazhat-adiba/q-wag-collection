@@ -35,9 +35,10 @@ No tools required. You do not need Node, npm, git, or a copy of this code.
 
 1. Go to the [Releases page](../../releases) and download
    `wag-inbox-vX.Y.Z.zip` from the newest release.
-2. Unzip it. You get a folder called `wag-inbox`. **Put it somewhere permanent**
-   — Chrome loads it from wherever it sits, so a folder in Downloads that you
-   later clear out will break the extension. Documents is fine.
+2. Unzip it. **Put the folder somewhere permanent** — Chrome loads it from
+   wherever it sits, so a folder in Downloads that you later clear out will
+   break the extension. Documents is fine. The folder you want is the one with
+   `manifest.json` directly inside it.
 3. Open a new tab and go to `chrome://extensions`.
 4. Turn on **Developer mode**, the switch in the top right.
 5. Click **Load unpacked** and choose the `wag-inbox` folder you unzipped.
