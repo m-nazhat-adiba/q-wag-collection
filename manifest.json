@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "WAG Inbox",
+  "version": "0.2.0",
+  "description": "A filtered inbox of the group chats you pick, drawn on top of your team's chat console.",
+  "permissions": ["storage", "scripting"],
+  "optional_host_permissions": ["https://*/*"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_title": "WAG Inbox settings"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/*.js"],
+      "matches": ["https://*/*"],
+      "use_dynamic_url": true
+    }
+  ]
+}

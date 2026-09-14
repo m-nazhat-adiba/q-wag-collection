@@ -1,0 +1,32 @@
+[
+  {
+    "group_id": "120363000000000001@g.us",
+    "group_name": "Northwind Retail",
+    "message_count": 814,
+    "new_count": 814,
+    "last_ts": 1789351000000,
+    "last_body": "[fixture placeholder - real message body scrubbed]",
+    "last_sender": "Support Team",
+    "last_from_me": 1
+  },
+  {
+    "group_id": "120363000000000002@g.us",
+    "group_name": "Acme Freight <> Support",
+    "message_count": 674,
+    "new_count": 674,
+    "last_ts": 1789351233000,
+    "last_body": "[fixture placeholder - real message body scrubbed]",
+    "last_sender": "Support Team",
+    "last_from_me": 1
+  },
+  {
+    "group_id": "120363000000000003@g.us",
+    "group_name": "Globex <> Support",
+    "message_count": 12,
+    "new_count": 12,
+    "last_ts": 1789300000000,
+    "last_body": "[fixture placeholder - real message body scrubbed]",
+    "last_sender": "Someone Else",
+    "last_from_me": 0
+  }
+]
