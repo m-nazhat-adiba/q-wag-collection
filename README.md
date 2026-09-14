@@ -31,13 +31,16 @@ used for the preview line if present.
 
 ## Install
 
-1. Open `chrome://extensions`.
-2. Turn on **Developer mode** (top right).
-3. Click **Load unpacked** and choose this folder.
-4. Click the extension's icon to open its settings.
-5. Paste the address of your chat-list endpoint and click **Save and grant
+1. Build it: `npm install && npm run build`. This produces `dist/content.js`,
+   the script that gets injected. It is not committed, so a fresh clone has to
+   build before Chrome can load it.
+2. Open `chrome://extensions`.
+3. Turn on **Developer mode** (top right).
+4. Click **Load unpacked** and choose this folder.
+5. Click the extension's icon to open its settings.
+6. Paste the address of your chat-list endpoint and click **Save and grant
    access**. Chrome asks whether to let the extension read that site; approve it.
-6. Open your console and reload. A **Groups** pill appears bottom-right.
+7. Open your console and reload. A **Groups** pill appears bottom-right.
 
 The extension ships with access to nothing. It holds no site address until you
 enter one, and Chrome, not the extension, decides whether it gets access. You can
@@ -153,10 +156,17 @@ decision worth testing and touch neither the DOM nor chrome APIs. `src/panel.js`
 and `src/navigate.js` depend on markup we do not own and are verified by loading
 the extension.
 
-`src/content.js` is a loader and nothing else. An injected content script runs as
-a classic script, so it cannot use `import ... from` — it dynamic-imports
-`src/main.js`, which is the real entry point and may use modules freely.
-`test/manifest.test.js` pins that shape so the mistake cannot come back quietly.
+`src/main.js` is the entry point. esbuild bundles it and everything it imports
+into a single classic script at `dist/content.js`, and that is what gets
+injected. `npm test` rebuilds first, so the tests never run against a stale
+bundle.
+
+The bundle is not an optimisation. A content script cannot fetch a second file
+at runtime: a dynamic import is governed by the **host page's** Content Security
+Policy, and a page serving `script-src 'self'` refuses a `chrome-extension:` URL
+outright — the import fails and nothing mounts. Bundling removes the fetch, and
+with nothing to fetch the extension needs no `web_accessible_resources` either.
+`test/registration.test.js` pins this so it cannot regress quietly.
 
 `test/no-hostnames.test.js` fails if any specific deployment's address, product
 name, or customer name is committed. Adding a name to its exception list is not

@@ -22,7 +22,10 @@ async function registerPanel(pagePattern) {
     {
       id: SCRIPT_ID,
       matches: [pagePattern],
-      js: ['src/content.js'],
+      // The bundle, not a source file. A content script may not fetch a second
+      // file at runtime: a dynamic import is subject to the host page's CSP,
+      // and a page with script-src 'self' blocks chrome-extension: outright.
+      js: ['dist/content.js'],
       runAt: 'document_idle',
       persistAcrossSessions: true,
     },

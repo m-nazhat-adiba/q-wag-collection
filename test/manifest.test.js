@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 
 const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
-const loaderSource = readFileSync('src/content.js', 'utf8');
 
 /**
  * The manifest names no site. Access is asked for at runtime through Chrome's
@@ -32,26 +31,15 @@ describe('host access', () => {
 });
 
 /**
- * Chrome runs an injected content script as a classic script, so the entry
- * file cannot use a static import — it would throw "Cannot use import
- * statement outside a module" at its first line and nothing would mount.
+ * The panel is injected as one bundled classic script.
+ *
+ * A content script cannot fetch a second file at runtime: a dynamic import is
+ * governed by the host page's Content Security Policy, and a page serving
+ * script-src 'self' refuses a chrome-extension: URL outright. Bundling avoids
+ * the fetch, and with no file to fetch there is nothing to expose to pages.
  */
-describe('content script entry point', () => {
-  test('has no static import', () => {
-    expect(loaderSource).not.toMatch(/^\s*import\s+[\w{*]/m);
-  });
-
-  test('reaches the real code through a dynamic import instead', () => {
-    expect(loaderSource).toMatch(/import\(/);
-  });
-
-  test('exposes the modules it dynamically imports as web-accessible', () => {
-    const [entry] = manifest.web_accessible_resources;
-    expect(entry.resources).toContain('src/*.js');
-  });
-
-  test('rotates those resource urls so pages cannot fingerprint the extension', () => {
-    const [entry] = manifest.web_accessible_resources;
-    expect(entry.use_dynamic_url).toBe(true);
+describe('injected code', () => {
+  test('exposes no resources to web pages', () => {
+    expect(manifest.web_accessible_resources).toBeUndefined();
   });
 });

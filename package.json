@@ -6,9 +6,12 @@
   "description": "Chrome extension: a filtered inbox of the group chats you pick, over your team's chat console",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build": "esbuild src/main.js --bundle --format=iife --target=chrome111 --outfile=dist/content.js",
+    "pretest": "npm run build"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "vitest": "^2.1.8"
   }
 }

@@ -6,6 +6,8 @@
  * the allowlist and the per-group baseline counts.
  */
 
+console.info(`[WAG Inbox] v${chrome.runtime.getManifest().version} loading`);
+
 import { DEFAULT_POLL_MS, fetchChats, nextBackoff } from './api.js';
 import { buildInbox, markRead } from './diff.js';
 import { openInApp } from './navigate.js';
