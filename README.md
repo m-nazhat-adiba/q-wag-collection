@@ -44,6 +44,20 @@ enter one, and Chrome, not the extension, decides whether it gets access. You ca
 revoke it any time from `chrome://extensions`, or with **Forget this site** on
 the settings page.
 
+## If the panel stops appearing
+
+Check the page console for a `[WAG Inbox] v… loading` line.
+
+No line at all means the content script is not being injected. Open the
+extension's settings and click **Save and grant access** again to re-register
+it. Reloading or updating an extension clears dynamically registered content
+scripts, which is why the extension re-registers itself on install and on
+browser start.
+
+A line whose version is older than the one in `chrome://extensions` means an
+orphaned script from a previous build is still running in that tab. Reload the
+page.
+
 ## First run
 
 The inbox starts empty. Open the drawer, switch to **All groups**, and click the

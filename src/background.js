@@ -65,6 +65,32 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   return true; // response is async
 });
 
+/**
+ * Puts the panel back after an extension reload.
+ *
+ * Reloading or updating an extension clears every dynamically registered
+ * content script. persistAcrossSessions covers a browser restart, not a
+ * reload, so without this the extension keeps its settings and its host
+ * permission while quietly injecting nothing.
+ */
+async function restoreRegistration() {
+  const { pagePattern } = await chrome.storage.local.get('pagePattern');
+  if (!pagePattern) return;
+
+  // The permission can have been revoked from chrome://extensions while we
+  // were not running. Registering without it would fail anyway.
+  const allowed = await chrome.permissions.contains({ origins: [pagePattern] });
+  if (!allowed) {
+    await chrome.storage.local.remove(['endpoint', 'pagePattern']);
+    return;
+  }
+
+  await registerPanel(pagePattern);
+}
+
+chrome.runtime.onInstalled.addListener(restoreRegistration);
+chrome.runtime.onStartup.addListener(restoreRegistration);
+
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
 /** If access is revoked from chrome://extensions, stop injecting into the site. */
