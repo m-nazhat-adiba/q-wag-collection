@@ -7,7 +7,7 @@ the latest step. Personal, local (`chrome.storage.local`), no backend.
 
 > Model note: this started as a single evolving record (status + 2 link slots +
 > note). That was wrong — the real workflow is a **timeline you keep adding to**
-> ("asked Soluport" → then "handed to Product"), each step its own saved entry
+> ("asked upstream" → then "handed to Product"), each step its own saved entry
 > with its own link. "Escalation Link / Link 2" in the source tool were two
 > *steps*, not two slots.
 
@@ -57,7 +57,7 @@ the latest step. Personal, local (`chrome.storage.local`), no backend.
   "1203…@g.us": {
     "v": 2,
     "entries": [
-      { "id": "e_…", "at": 1700000000000, "status": "st_backlog_ops", "link": "https://…slack…", "note": "asked Soluport" },
+      { "id": "e_…", "at": 1700000000000, "status": "st_backlog_ops", "link": "https://…slack…", "note": "asked upstream" },
       { "id": "e_…", "at": 1700003600000, "status": "st_prodfeat_appcen_data", "link": "https://…slack…", "note": "handed to Product" }
     ]
   }

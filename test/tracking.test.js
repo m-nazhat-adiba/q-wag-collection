@@ -35,9 +35,9 @@ describe('makeRecord / isEmpty', () => {
 
 describe('addProgress', () => {
   test('creates a record from nothing and appends the first step', () => {
-    const rec = addProgress(null, step({ id: 'a', note: 'asked soluport' }), NOW);
+    const rec = addProgress(null, step({ id: 'a', note: 'asked upstream' }), NOW);
     expect(rec.entries).toEqual([
-      { id: 'a', at: NOW, status: IN_PROGRESS, link: null, note: 'asked soluport' },
+      { id: 'a', at: NOW, status: IN_PROGRESS, link: null, note: 'asked upstream' },
     ]);
   });
 
