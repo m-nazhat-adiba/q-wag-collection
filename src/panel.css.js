@@ -89,8 +89,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 .tab {
   flex: 1;
-  padding: 10px 8px;
-  font-size: 12px;
+  padding: 10px 6px;
+  font-size: 11.5px;
+  white-space: nowrap;
   color: var(--dim);
   border-bottom: 2px solid transparent;
 }
@@ -237,6 +238,285 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 .row__pick { padding: 4px; font-size: 15px; color: var(--dim); }
 .row__pick[data-picked="true"] { color: var(--signal); }
+
+/* ---- pin ------------------------------------------------------------ */
+
+.row__pin {
+  align-self: center;
+  flex: none;
+  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 6px;
+  /* Hidden until the row is hovered or focused; greyed until pinned. */
+  opacity: 0;
+  filter: grayscale(1);
+  transition: opacity 120ms ease, filter 120ms ease;
+}
+
+.row:hover .row__pin,
+.row:focus-within .row__pin { opacity: 0.55; }
+
+.row .row__pin:hover,
+.row__pin:focus-visible { opacity: 1; }
+
+/* A pinned group keeps its pin lit at all times, so its state is never hidden. */
+.row[data-pinned="true"] .row__pin {
+  opacity: 1;
+  filter: none;
+}
+
+/* ---- need-attention flag ------------------------------------------- */
+
+.row__attn {
+  align-self: center;
+  flex: none;
+  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 6px;
+  /* Hidden until the row is hovered or focused; greyed until flagged. */
+  opacity: 0;
+  filter: grayscale(1);
+  transition: opacity 120ms ease, filter 120ms ease;
+}
+
+.row:hover .row__attn,
+.row:focus-within .row__attn { opacity: 0.55; }
+
+.row .row__attn:hover,
+.row__attn:focus-visible { opacity: 1; }
+
+/* A flagged group keeps its bell lit at all times. */
+.row[data-attn="true"] .row__attn {
+  opacity: 1;
+  filter: none;
+}
+
+/* ---- pinned section ------------------------------------------------- */
+
+.section-label {
+  padding: 10px 16px 6px;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.section-divider {
+  height: 1px;
+  margin: 5px 12px;
+  background: var(--hairline);
+}
+
+/* ---- case tracking: row chip ---------------------------------------- */
+
+.case-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  align-self: center;
+  max-width: 96px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text);
+  background: color-mix(in srgb, var(--chip-color, var(--dim)) 18%, var(--raised));
+  border: 1px solid color-mix(in srgb, var(--chip-color, var(--dim)) 35%, transparent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.case-chip__dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--dim));
+}
+
+.case-chip__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.case-chip--none { color: var(--dim); }
+.case-chip--done { opacity: 0.75; }
+
+.row:hover .case-chip {
+  border-color: color-mix(in srgb, var(--chip-color, var(--dim)) 55%, transparent);
+}
+
+/* +track affordance: hidden until the row is hovered/focused, like the pin */
+.case-chip--add {
+  background: none;
+  border: 1px dashed var(--hairline);
+  color: var(--dim);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.row:hover .case-chip--add,
+.row:focus-within .case-chip--add { opacity: 0.55; }
+.case-chip--add:hover,
+.case-chip--add:focus-visible { opacity: 1; }
+
+/* In the Need Attention tab the +track affordance is the primary action, so it
+   stays visible rather than waiting for a hover. */
+.case-chip--add.case-chip--shown { opacity: 0.85; }
+
+/* ---- case tracking: detail sheet ------------------------------------ */
+
+.case-sheet {
+  position: absolute;
+  inset: auto 0 0;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 14px 16px 16px;
+  background: var(--ground);
+  border-top: 1px solid var(--hairline);
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 0.3);
+}
+
+.field { margin-top: 12px; }
+
+.field__label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--dim);
+}
+
+.case-status { display: flex; align-items: center; gap: 8px; }
+
+.case-status__swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--chip-color, transparent);
+  border: 1px solid var(--hairline);
+}
+
+.case-status__select {
+  flex: 1;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color-scheme: dark;
+}
+
+.case-form {
+  padding-bottom: 14px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.case-form > * + * { margin-top: 8px; }
+
+.case-form__title { font-size: 12px; font-weight: 600; color: var(--text); }
+
+.case-link__input,
+.case-note {
+  width: 100%;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+}
+
+.case-note { height: 60px; line-height: 1.5; resize: vertical; }
+
+.case-link__input--invalid { border-color: var(--alarm); }
+.case-link__hint { font-size: 11px; color: var(--alarm); }
+.case-form__hint { font-size: 11px; color: var(--alarm); }
+
+.case-form__actions { display: flex; }
+.case-form__actions button {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--hairline);
+  background: var(--raised);
+  color: var(--text);
+}
+.case-form__actions button[data-primary="true"] {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: #1a1205;
+  font-weight: 600;
+}
+
+/* ---- case tracking: progress timeline ------------------------------- */
+
+.timeline { margin-top: 6px; max-height: 40vh; overflow-y: auto; }
+
+.timeline__empty { padding: 6px 0; color: var(--dim); font-size: 12px; font-style: italic; }
+
+.timeline__item {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.timeline__item:last-child { border-bottom: 0; }
+
+.timeline__head { display: flex; align-items: center; gap: 8px; }
+
+.timeline__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  background: color-mix(in srgb, var(--chip-color, var(--dim)) 18%, var(--raised));
+}
+.timeline__status--none { color: var(--dim); }
+
+.timeline__time { flex: 1; font-size: 10.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+.timeline__del {
+  flex: none;
+  padding: 0 6px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--dim);
+}
+.timeline__del:hover { color: var(--alarm); }
+
+.timeline__link {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--signal);
+  text-decoration: none;
+}
+.timeline__link:hover { text-decoration: underline; }
+
+.timeline__note {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sheet__actions button.danger { color: var(--alarm); }
+
+@media (prefers-reduced-motion: reduce) {
+  .case-chip--add { transition: none; }
+}
 
 /* ---- states --------------------------------------------------------- */
 

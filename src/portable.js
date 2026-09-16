@@ -106,9 +106,15 @@ export function resolveImport(entries, allGroups, allowlist) {
   const seen = new Set();
 
   for (const entry of entries) {
-    const groupId = entry.group_id && byId.has(entry.group_id)
-      ? entry.group_id
-      : byName.get(normalise(entry.group_name ?? ''));
+    let groupId = null;
+    if (entry.group_id && byId.has(entry.group_id)) {
+      groupId = entry.group_id;
+    } else if (entry.group_name) {
+      // Only fall back to a name that is actually present. Matching on an empty
+      // name would collide on byName.get(''), silently adopting a group whose
+      // name is blank.
+      groupId = byName.get(normalise(entry.group_name)) ?? null;
+    }
 
     if (!groupId) {
       unmatched.push(entry.group_id ?? entry.group_name);

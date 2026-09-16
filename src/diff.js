@@ -49,6 +49,10 @@ export function computeUnread(group, baseline) {
 
 export function sortByRecent(items) {
   return [...items].sort((a, b) => {
+    // Pinned groups sit above everything, then unread above read, then newest
+    // first. Items with no `pinned` flag sort exactly as they did before.
+    const pinnedRank = Boolean(b.pinned) - Boolean(a.pinned);
+    if (pinnedRank !== 0) return pinnedRank;
     const unreadRank = (b.unread > 0) - (a.unread > 0);
     if (unreadRank !== 0) return unreadRank;
     return b.last_ts - a.last_ts;
@@ -66,12 +70,21 @@ export function markRead(baseline, group) {
  * The one call content.js makes per poll: response + your settings in,
  * everything the panel needs out.
  */
-export function buildInbox(groups, allowlist, baseline) {
+export function buildInbox(groups, allowlist, baseline, pinned = [], attention = []) {
   assertShape(groups);
 
+  const isPinned = new Set(pinned);
+  const needsAttention = new Set(attention);
   const mine = filterAllowlist(groups, allowlist);
   const rows = sortByRecent(
-    mine.map((group) => ({ ...group, unread: computeUnread(group, baseline) })),
+    mine.map((group) => ({
+      ...group,
+      unread: computeUnread(group, baseline),
+      pinned: isPinned.has(group.group_id),
+      // A manual flag, independent of pin: it fills the Need Attention tab, the
+      // only place case tracking is reachable.
+      attention: needsAttention.has(group.group_id),
+    })),
   );
 
   const present = new Set(mine.map((group) => group.group_id));

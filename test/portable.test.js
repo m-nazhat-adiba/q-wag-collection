@@ -123,4 +123,11 @@ describe('resolveImport', () => {
     const result = resolveImport([{ group_id: ACME, group_name: null }], chats, []);
     expect(result.matched).not.toContain(GLOBEX);
   });
+
+  test('does not adopt a blank-named group when an entry has no usable name', () => {
+    const withBlank = [...chats, { group_id: 'blank@g.us', group_name: '   ' }];
+    const result = resolveImport([{ group_id: 'gone@g.us', group_name: null }], withBlank, []);
+    expect(result.matched).toEqual([]);
+    expect(result.unmatched).toEqual(['gone@g.us']);
+  });
 });
