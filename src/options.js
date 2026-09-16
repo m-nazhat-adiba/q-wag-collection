@@ -7,6 +7,7 @@
  */
 
 import { derivePagePattern, normaliseEndpoint, originPermission } from './config.js';
+import { DEFAULT_STATUS_DEFS, parseStatusDefs, resolveStatusDefs, serializeStatusDefs } from './tracking.js';
 
 const endpointField = document.getElementById('endpoint');
 const patternField = document.getElementById('pattern');
@@ -14,10 +15,21 @@ const saveButton = document.getElementById('save');
 const forgetButton = document.getElementById('forget');
 const status = document.getElementById('status');
 
+const statusesField = document.getElementById('statuses');
+const saveStatusesButton = document.getElementById('saveStatuses');
+const resetStatusesButton = document.getElementById('resetStatuses');
+const statusesMsg = document.getElementById('statusesMsg');
+
 function report(message, tone) {
   status.textContent = message;
   status.dataset.tone = tone;
   status.hidden = false;
+}
+
+function reportStatuses(message, tone) {
+  statusesMsg.textContent = message;
+  statusesMsg.dataset.tone = tone;
+  statusesMsg.hidden = false;
 }
 
 /** Fill the pattern in as the endpoint is typed, until it is edited by hand. */
@@ -68,10 +80,29 @@ forgetButton.addEventListener('click', async () => {
   report('Settings cleared and access revoked.', 'good');
 });
 
-const stored = await chrome.storage.local.get(['endpoint', 'pagePattern']);
+saveStatusesButton.addEventListener('click', async () => {
+  const defs = parseStatusDefs(statusesField.value);
+  if (!defs.length) {
+    reportStatuses('Add at least one status, one per line.', 'bad');
+    return;
+  }
+  await chrome.storage.local.set({ statusDefs: defs });
+  statusesField.value = serializeStatusDefs(defs); // reflect the normalized set
+  reportStatuses(`Saved ${defs.length} statuses. Open panels update on next check.`, 'good');
+});
+
+resetStatusesButton.addEventListener('click', async () => {
+  await chrome.storage.local.set({ statusDefs: [] });
+  statusesField.value = serializeStatusDefs(DEFAULT_STATUS_DEFS);
+  reportStatuses('Reset to the built-in statuses.', 'good');
+});
+
+const stored = await chrome.storage.local.get(['endpoint', 'pagePattern', 'statusDefs']);
 if (stored.endpoint) {
   endpointField.value = stored.endpoint;
   patternField.value = stored.pagePattern ?? '';
   patternEdited = true;
   report('This extension is set up and running on the site above.', 'good');
 }
+
+statusesField.value = serializeStatusDefs(resolveStatusDefs(stored.statusDefs));

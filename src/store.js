@@ -17,6 +17,14 @@ const DEFAULTS = {
   endpoint: '',
   pagePattern: '',
   allowlist: [],
+  /** A subset of the allowlist, floated to the top of the inbox. */
+  pinned: [],
+  /** A subset of the allowlist, surfaced in the Need Attention tab. Case tracking lives there. */
+  attention: [],
+  /** Per-group escalation record, keyed by group_id (a map, like baseline). */
+  tracking: {},
+  /** The user's status set, edited on the options page. Empty = use the built-in set. */
+  statusDefs: [],
   baseline: {},
   pollMs: DEFAULT_POLL_MS,
 };
@@ -77,4 +85,61 @@ export async function toggleAllowlist(groupId) {
     : [...allowlist, groupId];
   await saveState({ allowlist: next });
   return next;
+}
+
+export async function togglePinned(groupId) {
+  const { pinned } = await loadState();
+  const next = pinned.includes(groupId)
+    ? pinned.filter((id) => id !== groupId)
+    : [...pinned, groupId];
+  await saveState({ pinned: next });
+  return next;
+}
+
+/** Flags (or unflags) a group as needing attention — the Need Attention tab's contents. */
+export async function toggleAttention(groupId) {
+  const { attention } = await loadState();
+  const next = attention.includes(groupId)
+    ? attention.filter((id) => id !== groupId)
+    : [...attention, groupId];
+  await saveState({ attention: next });
+  return next;
+}
+
+/**
+ * A single-writer queue. The toggle helpers above read a snapshot and then
+ * await a write, so two edits firing close together can each read the old value
+ * and the second clobbers the first. Case edits happen far more often (typing,
+ * status changes) and the whole `tracking` map is one storage key, so a lost
+ * write there loses an unrelated case. Every case mutation runs through this
+ * chain and re-reads the current map at execution time, making read-modify-write
+ * serial and clobber-free within this page.
+ */
+let writeChain = Promise.resolve();
+
+function enqueue(task) {
+  const run = writeChain.then(task, task); // run regardless of the prior outcome
+  writeChain = run.catch(() => {}); // a failure must not wedge the queue
+  return run;
+}
+
+/**
+ * Reads the current record for a group, lets `updater` return the next record
+ * (or null to delete it), and writes back only the `tracking` key — so a
+ * concurrent poll or a pin/baseline write can never be clobbered by this.
+ *
+ * @param {(record: object|null) => object|null} updater
+ * @returns {Promise<object|null>} the new record
+ */
+export function mutateTracking(groupId, updater) {
+  return enqueue(async () => {
+    assertContext();
+    const { tracking } = await loadState();
+    const nextRecord = updater(tracking[groupId] ?? null);
+    const map = { ...tracking };
+    if (nextRecord == null) delete map[groupId];
+    else map[groupId] = nextRecord;
+    await saveState({ tracking: map });
+    return nextRecord;
+  });
 }

@@ -68,6 +68,14 @@ describe('sortByRecent', () => {
     expect(sortByRecent(items).map((i) => i.group_id)).toEqual(['newer', 'older']);
   });
 
+  test('floats a pinned group above an unread one', () => {
+    const items = [
+      { group_id: 'unread', unread: 9, last_ts: 9000, pinned: false },
+      { group_id: 'pinned', unread: 0, last_ts: 1000, pinned: true },
+    ];
+    expect(sortByRecent(items).map((i) => i.group_id)).toEqual(['pinned', 'unread']);
+  });
+
   test('does not mutate the array it was given', () => {
     const items = [
       { group_id: 'a', unread: 0, last_ts: 1 },
@@ -125,5 +133,45 @@ describe('buildInbox', () => {
   test('rejects a response whose entries lack new_count', () => {
     const malformed = [{ group_id: 'x@g.us', group_name: 'X', last_ts: 1 }];
     expect(() => buildInbox(malformed, ['x@g.us'], {})).toThrow(/shape/i);
+  });
+
+  test('floats a pinned group to the top and flags it, even when it is oldest', () => {
+    // GLOBEX is the oldest in the fixture, yet pinning lifts it above the rest.
+    const { rows } = buildInbox(chats, [NORTHWIND, ACME, GLOBEX], {}, [GLOBEX]);
+    expect(rows[0].group_id).toBe(GLOBEX);
+    expect(rows[0].pinned).toBe(true);
+    expect(rows.filter((r) => r.pinned)).toHaveLength(1);
+  });
+
+  test('orders several pinned groups by recency among themselves', () => {
+    const { rows } = buildInbox(chats, [NORTHWIND, ACME, GLOBEX], {}, [NORTHWIND, GLOBEX]);
+    expect(rows.slice(0, 2).map((r) => r.group_id)).toEqual([NORTHWIND, GLOBEX]);
+    // ACME is the newest overall but unpinned, so it drops below both pins.
+    expect(rows[2].group_id).toBe(ACME);
+  });
+
+  test('treats every row as unpinned when no pinned list is given', () => {
+    const { rows } = buildInbox(chats, [ACME], {});
+    expect(rows.every((r) => r.pinned === false)).toBe(true);
+  });
+
+  test('flags groups marked as needing attention', () => {
+    const { rows } = buildInbox(chats, [NORTHWIND, ACME, GLOBEX], {}, [], [ACME]);
+    expect(rows.find((r) => r.group_id === ACME).attention).toBe(true);
+    expect(rows.filter((r) => r.attention)).toHaveLength(1);
+  });
+
+  test('treats every row as un-flagged when no attention list is given', () => {
+    const { rows } = buildInbox(chats, [ACME], {});
+    expect(rows.every((r) => r.attention === false)).toBe(true);
+  });
+
+  test('pin and attention are independent flags on the same group', () => {
+    // ACME is pinned but not flagged; GLOBEX is flagged but not pinned.
+    const { rows } = buildInbox(chats, [NORTHWIND, ACME, GLOBEX], {}, [ACME], [GLOBEX]);
+    const acme = rows.find((r) => r.group_id === ACME);
+    const globex = rows.find((r) => r.group_id === GLOBEX);
+    expect([acme.pinned, acme.attention]).toEqual([true, false]);
+    expect([globex.pinned, globex.attention]).toEqual([false, true]);
   });
 });

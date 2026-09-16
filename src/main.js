@@ -13,7 +13,8 @@ import { buildInbox, markRead } from './diff.js';
 import { openInApp } from './navigate.js';
 import { createPanel } from './panel.js';
 import { parseImport, resolveImport, serialize } from './portable.js';
-import { isContextAlive, isContextLost, loadState, saveState, setAllowlist, toggleAllowlist } from './store.js';
+import { addProgress, deleteEntry, resolveStatusDefs } from './tracking.js';
+import { isContextAlive, isContextLost, loadState, mutateTracking, saveState, setAllowlist, toggleAllowlist, toggleAttention, togglePinned } from './store.js';
 
 /** In-memory only. Never written to storage. */
 let allGroups = [];
@@ -68,6 +69,11 @@ function guarded(fn) {
 const panel = createPanel({
   onOpenGroup: guarded(onOpenGroup),
   onTogglePick: guarded(onTogglePick),
+  onTogglePin: guarded(onTogglePin),
+  onToggleAttention: guarded(onToggleAttention),
+  onAddProgress: guarded(onAddProgress),
+  onDeleteEntry: guarded(onDeleteEntry),
+  onClearCase: guarded(onClearCase),
   onExport: guarded(onExport),
   onImportText: guarded(onImportText),
   onApplyImport: guarded(onApplyImport),
@@ -83,10 +89,10 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 async function draw() {
-  const { allowlist, baseline } = await loadState();
+  const { allowlist, baseline, pinned, attention, tracking, statusDefs } = await loadState();
 
   try {
-    const built = buildInbox(allGroups, allowlist, baseline);
+    const built = buildInbox(allGroups, allowlist, baseline, pinned, attention);
     lastGood = { groups: allGroups, ...built };
   } catch (error) {
     // A shape change must not blank the panel. Fall back to the last list we
@@ -99,9 +105,25 @@ async function draw() {
     ...lastGood,
     allGroups: lastGood.groups,
     allowlist,
+    // The flagged set, so the Need Attention tab can include a flagged group that
+    // has dropped out of the server list (it lives on in `missing`).
+    attention,
+    // A local overlay keyed by group_id, passed alongside the rows rather than
+    // baked into them, so chips also resolve on missing/orphan rows and survive
+    // a shape error (tracking never depended on the API response).
+    tracking,
+    statusDefs: resolveStatusDefs(statusDefs),
     status,
     message,
     lastSuccess,
+  });
+}
+
+// The status set is edited on the options page — a different context. Re-draw so
+// the open panel reflects a new or renamed status without waiting for a poll.
+if (globalThis.chrome?.storage?.onChanged) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.statusDefs) guarded(draw)();
   });
 }
 
@@ -175,7 +197,54 @@ function onOpenSettings() {
 }
 
 async function onTogglePick(groupId) {
-  await toggleAllowlist(groupId);
+  const next = await toggleAllowlist(groupId);
+  // A pin or an attention flag only means something for a group you still
+  // watch; dropping the pick drops both with it, so a re-picked group does not
+  // come back pinned or flagged. (Its case log is left intact, in case the
+  // un-pick was a mis-click.)
+  if (!next.includes(groupId)) {
+    const { pinned, attention } = await loadState();
+    const patch = {};
+    if (pinned.includes(groupId)) patch.pinned = pinned.filter((id) => id !== groupId);
+    if (attention.includes(groupId)) patch.attention = attention.filter((id) => id !== groupId);
+    if (Object.keys(patch).length) await saveState(patch);
+  }
+  await draw();
+}
+
+async function onTogglePin(groupId) {
+  await togglePinned(groupId);
+  await draw();
+}
+
+async function onToggleAttention(groupId) {
+  await toggleAttention(groupId);
+  await draw();
+}
+
+/**
+ * Adds one progress step to a case's log. The read-modify-write happens
+ * atomically inside the store's write queue, so overlapping edits can't clobber
+ * each other or an unrelated case. `input` carries { status, link, note }; the
+ * id is minted here so the pure appender stays deterministic.
+ */
+async function onAddProgress(groupId, input) {
+  const id = `e_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  await mutateTracking(groupId, (prev) => addProgress(prev, { ...input, id }, Date.now()));
+  await draw();
+}
+
+/** Removes one step; a log emptied of its last step drops the case entirely. */
+async function onDeleteEntry(groupId, entryId) {
+  await mutateTracking(groupId, (prev) => {
+    const next = deleteEntry(prev, entryId);
+    return next.entries.length ? next : null;
+  });
+  await draw();
+}
+
+async function onClearCase(groupId) {
+  await mutateTracking(groupId, () => null);
   await draw();
 }
 
